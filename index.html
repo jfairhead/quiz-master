@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clarrie's Quiz Machine</title>
+<meta name="description" content="Practise pub quiz questions in rounds of ten, with a scorecard after every round.">
+<meta name="theme-color" content="#1B1030">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Quiz Machine">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bungee&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cab:#1B1030; --panel:#271A44; --line:#3F2D68;
+  --gold:#FFC940; --gold-deep:#D99A12; --cream:#FFF4DC; --muted:#BFB0DB;
+  --sign:#A3202B; --sign-dark:#5E1119;
+  --a:#D93B40; --b:#2F6BEA; --c:#1F8A57; --d:#F2A516;
+  --ok:#4BE08F; --bad:#FF7A7A;
+  --body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --display:"Bungee", "Arial Black", Impact, system-ui, sans-serif;
+  color-scheme:dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--cab)}
+body{color:var(--cream);font-family:var(--body);font-size:18px;line-height:1.45;min-height:100vh}
+button{font:inherit;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.cabinet{max-width:560px;margin:0 auto;padding:14px 16px 36px}
+
+/* The sign */
+.marquee{position:relative;text-align:center;border-radius:20px;margin:8px 0 22px;padding:28px 20px 26px;
+  background:radial-gradient(130% 100% at 50% 0%, #C9313B 0%, #8E1A24 100%);
+  box-shadow:0 0 0 3px var(--sign-dark), 0 16px 44px -14px rgba(255,110,70,.45)}
+.marquee::before{content:"";position:absolute;inset:8px;border:6px dotted var(--gold);border-radius:14px;pointer-events:none;
+  animation:twinkle 1.1s ease-in-out 3}
+@keyframes twinkle{0%,100%{opacity:1}50%{opacity:.3}}
+.marquee h1{margin:0;font-family:var(--display);font-weight:400;line-height:1;color:var(--gold);text-shadow:0 3px 0 var(--sign-dark)}
+.marquee .who{display:block;font-size:1.05rem;color:var(--cream);letter-spacing:.05em;margin-bottom:8px}
+.marquee .what{display:block;font-size:clamp(1.9rem, 9.5vw, 2.7rem)}
+body:not([data-screen="home"]) .marquee{padding:14px 16px 13px;margin-bottom:16px;border-radius:16px}
+body:not([data-screen="home"]) .marquee::before{inset:5px;border-width:4px;border-radius:12px;animation:none}
+body:not([data-screen="home"]) .marquee .who{display:inline;font-size:.8rem;margin:0 .4em 0 0}
+body:not([data-screen="home"]) .marquee .what{display:inline;font-size:1.05rem}
+
+/* Home */
+.intro{margin:0 2px 22px;color:var(--cream)}
+.block{margin:0 0 22px}
+.block h2{font-size:1rem;margin:0 0 10px;color:var(--gold)}
+.block-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.quick{display:flex;gap:16px}
+.link{background:none;border:0;color:var(--muted);font-size:.9rem;text-decoration:underline;text-underline-offset:3px;padding:6px 0;cursor:pointer}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip{font-size:.95rem;text-align:left;padding:11px 12px;min-height:50px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--cream);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--cream);border-color:var(--cream);color:var(--cab);font-weight:700}
+.chip[aria-pressed="true"]::before{content:"✓\00a0"}
+.seg{display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--panel);border:2px solid var(--line)}
+.seg button{flex:1;min-height:44px;padding:8px 6px;border:0;border-radius:999px;background:transparent;color:var(--muted);font-size:.92rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--gold);color:var(--cab);font-weight:700}
+.hint{color:var(--muted);font-size:.9rem;margin:8px 2px 0}
+.center{text-align:center}
+.toggle{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.toggle input{flex:none;width:22px;height:22px;margin:2px 0 0;accent-color:var(--gold)}
+.warn{color:var(--bad);font-size:.95rem;margin:10px 2px 0}
+
+.btn-start{display:block;width:100%;padding:18px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--display);font-size:1.3rem;color:var(--cab);background:var(--gold);box-shadow:0 5px 0 var(--gold-deep)}
+.btn-start:active{transform:translateY(3px);box-shadow:0 2px 0 var(--gold-deep)}
+.btn-start:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-main{display:block;width:100%;padding:16px;border:0;border-radius:14px;cursor:pointer;font-weight:700;font-size:1.1rem;color:var(--cab);background:var(--cream)}
+.btn-ghost{display:block;width:100%;padding:14px;border:2px solid var(--line);border-radius:14px;cursor:pointer;font-size:1rem;color:var(--cream);background:transparent}
+.stack{display:grid;gap:10px;margin-top:14px}
+
+details.record{margin-top:30px;padding:2px 16px 6px;border-radius:14px;background:var(--panel)}
+details.record summary{cursor:pointer;padding:12px 0;font-weight:700;color:var(--gold)}
+.rec-row{display:grid;grid-template-columns:8.6em 1fr 4.4em;gap:10px;align-items:center;font-size:.9rem;margin:9px 0}
+.rec-row span:last-child{text-align:right;color:var(--muted)}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold)}
+.recent{list-style:none;padding:0;margin:14px 0;font-size:.9rem;color:var(--muted)}
+.recent li{padding:5px 0;border-top:1px solid var(--line)}
+.recent strong{color:var(--cream)}
+
+/* Question */
+.qbar{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:.95rem}
+.pips{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;list-style:none;padding:0;margin:6px 0 20px}
+.pips li{height:8px;border-radius:4px;background:var(--line)}
+.pips li.now{background:var(--cream)}
+.pips li.ok{background:var(--ok)}
+.pips li.bad{background:var(--bad)}
+.qmeta{margin:0 0 6px;color:var(--muted);font-size:.95rem}
+.qtext{margin:0 0 22px;font-size:1.45rem;line-height:1.3;font-weight:700;color:var(--cream)}
+.options{display:grid;gap:10px}
+.opt{position:relative;display:flex;align-items:center;gap:14px;width:100%;min-height:62px;padding:12px 16px;border:0;border-radius:14px;
+  text-align:left;font-size:1.08rem;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.35);transition:opacity .2s}
+.opt:active{transform:translateY(2px)}
+.opt:disabled{cursor:default;transform:none}
+.opt-a{background:var(--a)} .opt-b{background:var(--b)} .opt-c{background:var(--c)} .opt-d{background:var(--d);color:var(--cab)}
+.letter{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.25);font-family:var(--display);font-weight:400;font-size:1rem}
+.opt-d .letter{background:rgba(0,0,0,.14)}
+.opt.is-dim{opacity:.28}
+.opt.is-right{outline:4px solid var(--cream);outline-offset:3px}
+.opt.is-right::after,.opt.is-wrong::after{margin-left:auto;font-size:1.5rem;line-height:1}
+.opt.is-right::after{content:"✓"}
+.opt.is-wrong::after{content:"✗"}
+.feedback{min-height:1.6em;margin:20px 2px 12px;font-weight:700;font-size:1.12rem}
+.feedback.ok{color:var(--ok)} .feedback.bad{color:var(--bad)}
+.answer-reveal{padding:18px;border:2px dashed var(--gold);border-radius:16px;background:var(--panel);text-align:center}
+.answer-reveal span{display:block;color:var(--muted);font-size:.9rem;margin-bottom:4px}
+.answer-reveal strong{font-size:1.5rem;color:var(--gold)}
+.markrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.markrow button{min-height:56px;border:0;border-radius:14px;font-weight:700;font-size:1.05rem;color:#fff;cursor:pointer}
+.btn-got{background:var(--c)} .btn-miss{background:var(--a)}
+.pub-note{color:var(--muted);font-size:.95rem;margin:0 2px 14px}
+.loading{padding:60px 0;text-align:center;color:var(--muted)}
+
+/* Scorecard */
+.score{text-align:center}
+.score-num{margin:6px 0 0;font-family:var(--display);color:var(--gold);font-size:1.25rem}
+.score-num .big{display:block;font-size:5.2rem;line-height:1}
+.verdict{margin:10px 0 18px;font-size:1.15rem}
+.card-list{list-style:none;padding:0;margin:26px 0 0;display:grid;gap:10px}
+.card-list li{display:flex;gap:12px;padding:14px;border-radius:14px;background:var(--panel);border-left:6px solid var(--ok)}
+.card-list li.bad{border-left-color:var(--bad)}
+.mark{flex:none;width:1.3em;font-weight:700;font-size:1.2rem}
+.card-list li.ok .mark{color:var(--ok)} .card-list li.bad .mark{color:var(--bad)}
+.cq{margin:0 0 6px}
+.ca{margin:0;color:var(--gold)}
+.cy{margin:4px 0 0;color:var(--muted)}
+.csrc{margin:6px 0 0;color:var(--muted);font-size:.8rem}
+
+footer{margin-top:34px;color:var(--muted);font-size:.8rem;text-align:center}
+footer a{color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){
+  .marquee::before{animation:none}
+  .opt,.btn-start{transition:none}
+}
+</style>
+</head>
+<body data-screen="home">
+<div class="cabinet">
+  <header class="marquee">
+    <h1><span class="who">Clarrie's</span> <span class="what">Quiz Machine</span></h1>
+  </header>
+  <main id="app"></main>
+  <footer>
+    Built-in questions work offline. Extra questions come from
+    <a href="https://the-trivia-api.com" rel="noopener">The Trivia API</a> and
+    <a href="https://opentdb.com" rel="noopener">Open Trivia DB</a> (CC BY-SA 4.0).
+  </footer>
+</div>
+<script src="questions.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
